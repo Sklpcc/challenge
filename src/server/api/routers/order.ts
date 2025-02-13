@@ -28,8 +28,6 @@ export const orderRouter = createTRPCRouter({
       .groupBy(orders.id)
       .orderBy(desc(orders.createdAt));
 
-      console.log('result[0]', result[0]);
-
     return result;
   }),
 
@@ -108,9 +106,7 @@ export const orderRouter = createTRPCRouter({
             }
 
             if (product.stock < item.quantity) {
-              throw new Error(
-                `No hay suficiente stock de ${product.name}`,
-              );
+              throw new Error(`No hay suficiente stock de ${product.name}`);
             }
 
             return {
@@ -295,9 +291,7 @@ export const orderRouter = createTRPCRouter({
             }
 
             if (product.stock < item.quantity) {
-              throw new Error(
-                `No hay suficiente stock de ${product.name}`,
-              );
+              throw new Error(`No hay suficiente stock de ${product.name}`);
             }
 
             return {
