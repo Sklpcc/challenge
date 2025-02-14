@@ -87,7 +87,6 @@ export const orderRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.transaction(async (tx) => {
-        // Get products with their current prices
         const productsWithPrices = await Promise.all(
           input.products.map(async (item) => {
             const product = await tx
@@ -116,13 +115,11 @@ export const orderRouter = createTRPCRouter({
           }),
         );
 
-        // Calculate total
         const total = productsWithPrices.reduce(
           (sum, item) => sum + item.price * item.quantity,
           0,
         );
 
-        // Create order
         const [order] = await tx
           .insert(orders)
           .values({
@@ -132,7 +129,6 @@ export const orderRouter = createTRPCRouter({
           })
           .returning();
 
-        // Create order items
         await tx.insert(orderItems).values(
           productsWithPrices.map((item) => ({
             orderId: order!.id,
@@ -142,7 +138,6 @@ export const orderRouter = createTRPCRouter({
           })),
         );
 
-        // Update product stock
         await Promise.all(
           productsWithPrices.map((item) =>
             tx
@@ -168,7 +163,6 @@ export const orderRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { id, status } = input;
 
-      // If cancelling order, restore product stock
       if (status === "cancelled") {
         return ctx.db.transaction(async (tx) => {
           const items = await tx
@@ -208,13 +202,11 @@ export const orderRouter = createTRPCRouter({
 
   delete: publicProcedure.input(z.number()).mutation(async ({ ctx, input }) => {
     return ctx.db.transaction(async (tx) => {
-      // Get order items to restore stock
       const items = await tx
         .select()
         .from(orderItems)
         .where(eq(orderItems.orderId, input));
 
-      // Restore product stock
       await Promise.all(
         items.map((item) =>
           tx
@@ -226,10 +218,8 @@ export const orderRouter = createTRPCRouter({
         ),
       );
 
-      // Delete order items
       await tx.delete(orderItems).where(eq(orderItems.orderId, input));
 
-      // Delete order
       const [order] = await tx
         .delete(orders)
         .where(eq(orders.id, input))
@@ -254,13 +244,11 @@ export const orderRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.transaction(async (tx) => {
-        // Get current order items to restore stock
         const currentItems = await tx
           .select()
           .from(orderItems)
           .where(eq(orderItems.orderId, input.id));
 
-        // Restore current stock
         await Promise.all(
           currentItems.map((item) =>
             tx
@@ -272,7 +260,6 @@ export const orderRouter = createTRPCRouter({
           ),
         );
 
-        // Get products with their current prices
         const productsWithPrices = await Promise.all(
           input.products.map(async (item) => {
             const product = await tx
@@ -301,16 +288,13 @@ export const orderRouter = createTRPCRouter({
           }),
         );
 
-        // Calculate new total
         const total = productsWithPrices.reduce(
           (sum, item) => sum + item.price * item.quantity,
           0,
         );
 
-        // Delete current order items
         await tx.delete(orderItems).where(eq(orderItems.orderId, input.id));
 
-        // Create new order items
         await tx.insert(orderItems).values(
           productsWithPrices.map((item) => ({
             orderId: input.id,
@@ -320,7 +304,6 @@ export const orderRouter = createTRPCRouter({
           })),
         );
 
-        // Update product stock
         await Promise.all(
           productsWithPrices.map((item) =>
             tx
@@ -332,7 +315,6 @@ export const orderRouter = createTRPCRouter({
           ),
         );
 
-        // Update order
         const [order] = await tx
           .update(orders)
           .set({
