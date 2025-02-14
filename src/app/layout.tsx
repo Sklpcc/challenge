@@ -3,7 +3,6 @@ import "~/styles/globals.css";
 import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 import { Navigation } from "~/components/navigation";
-import { Toaster } from "~/components/ui/toaster";
 
 import { TRPCReactProvider } from "~/trpc/react";
 

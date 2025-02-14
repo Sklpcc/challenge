@@ -5,30 +5,13 @@ import { customers, orderItems, orders, products } from "~/server/db/schema";
 
 export const orderRouter = createTRPCRouter({
   getAll: publicProcedure.query(async ({ ctx }) => {
-    const result = await ctx.db
-      .select({
-        id: orders.id,
-        customerId: orders.customerId,
-        total: orders.total,
-        status: orders.status,
-        createdAt: orders.createdAt,
-        customer: {
-          id: customers.id,
-          name: customers.name,
-        },
-        products: sql<string>`json_group_array(json_object(
-          'productId', ${orderItems.productId},
-          'quantity', ${orderItems.quantity},
-          'price', ${orderItems.price}
-        ))`.mapWith(JSON.parse),
-      })
-      .from(orders)
-      .innerJoin(customers, eq(orders.customerId, customers.id))
-      .leftJoin(orderItems, eq(orders.id, orderItems.orderId))
-      .groupBy(orders.id)
-      .orderBy(desc(orders.createdAt));
-
-    return result;
+    return ctx.db.query.orders.findMany({
+      with: {
+        customer: true,
+        products: true,
+      },
+      orderBy: [desc(orders.createdAt)],
+    });
   }),
 
   getById: publicProcedure.input(z.number()).query(async ({ ctx, input }) => {
